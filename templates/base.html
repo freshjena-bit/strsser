@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SonicBotnet | Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <canvas id="bg-network"></canvas>
+    <div class="sidebar">
+    <div class="sidebar-header">
+        <div class="logo">SonicBotnet</div>
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+    <div class="menu" id="menu">
+        <a href="/" class="menu-item">
+            <i class="fas fa-tachometer-alt"></i>
+            Dashboard
+        </a>
+        <a href="attack" class="menu-item">
+            <i class="fas fa-server"></i>
+            Panel
+        </a>
+        <a href="methods" class="menu-item">
+            <i class="fas fa-list-ul"></i>
+            Methods
+        </a>
+        <a href="/add_user" class="menu-item">
+            <i class="fas fa-user-plus"></i>
+            Add User
+        </a>
+        <a href="/reset_users" class="menu-item">
+            <i class="fas fa-undo"></i>
+            Reset User
+        </a>
+        <a href="{{ url_for('logout') }}" class="menu-item">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+        </a>
+    </div>
+    </div>
+    <div class="main-content">
+        <div class="content">
+            <h2>Dashboard</h2>
+            <p>Welcome <span class="username">{{ username if username else 'User' }}</span>, enjoy using!</p>
+        </div>
+        <div class="stats-container">
+
+    <div class="stat-card total">
+        <div class="stat-info">
+            <h3>Total Bot/Botnet</h3>
+            <h1>12</h1>
+        </div>
+        <div class="stat-icon">
+            <i class="fas fa-users"></i>
+        </div>
+    </div>
+    <div class="stat-card online">
+        <div class="stat-info">
+            <h3>Online Users</h3>
+            <h1>{{ online_users }}</h1>
+        </div>
+        <div class="stat-icon">
+            <i class="fas fa-user-check"></i>
+        </div>
+    </div>
+    <div class="stat-card offline">
+        <div class="stat-info">
+            <h3>Offline Users</h3>
+            <h1>{{ offline_users }}</h1>
+        </div>
+        <div class="stat-icon">
+            <i class="fas fa-user-times"></i>
+        </div>
+    </div>
+        </div>
+        <div class="chart-container">
+            <h2>Total Users</h2>
+            <canvas id="requestsChart" width="800" height="300"></canvas>
+        </div>
+    </div>
+    <script>
+        const ctx = document.getElementById('requestsChart').getContext('2d');
+        let userCounts = JSON.parse('{{ user_counts | tojson }}');
+        let timestamps = JSON.parse('{{ timestamps | tojson }}');
+      
+        const myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timestamps,
+                    datasets: [{
+                        label: 'Total Users',
+                        data: userCounts,
+                        fill: true,
+                        borderColor: '#43C6AC',
+                        backgroundColor: 'rgba(67,198,172, 0.3)',
+                        tension: 0.4,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#43C6AC',
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Total users', 
+                                color: 'white'
+                            },
+                            ticks:{
+                                color: 'white'
+                            },
+                            grid: {
+                                color: 'rgba(255,255,255,0.2)'
+                            },
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time',
+                                color: 'white'
+                            },
+                            ticks:{
+                                color: 'white'
+                            },
+                            grid: {
+                                color: 'rgba(255,255,255,0.2)'
+                            },
+                        }
+                    },
+                    plugins: {
+                        legend:{
+                            labels: {
+                                color: 'white',
+                                font:{
+                                    size: 15
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+         function updateChart() {
+                fetch('/')  
+                    .then(response => response.text())
+                    .then(html => {
+                     const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newCounts = JSON.parse(doc.querySelector('script').textContent.match(/let userCounts = (\[.+\]);/)[1]);
+                    const newTimestamps = JSON.parse(doc.querySelector('script').textContent.match(/let timestamps = (\[.+\]);/)[1]);
+                    myChart.data.labels = newTimestamps;
+                    myChart.data.datasets[0].data = newCounts;
+                       myChart.update();
+                    })
+                    .catch(error => console.error('Error fetching data:', error));
+            }
+
+        setInterval(updateChart, 2000); 
+    </script>
+    <script>
+const toggle = document.getElementById('menuToggle');
+const menu = document.getElementById('menu');
+toggle.addEventListener('click', () => {
+    menu.classList.toggle('active');
+});
+    </script>
+    <script>
+const canvas = document.getElementById("bg-network");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+const particles = [];
+
+for(let i=0;i<40;i++){
+    particles.push({
+        x: Math.random()*canvas.width,
+        y: Math.random()*canvas.height,
+        vx: (Math.random()-0.5)*0.4,
+        vy: (Math.random()-0.5)*0.4
+    });
+}
+
+function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    for(let p of particles){
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if(p.x<0||p.x>canvas.width) p.vx*=-1;
+        if(p.y<0||p.y>canvas.height) p.vy*=-1;
+
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,2,0,Math.PI*2);
+        ctx.fillStyle="rgba(255,255,255,0.4)";
+        ctx.fill();
+    }
+
+    for(let i=0;i<particles.length;i++){
+        for(let j=i+1;j<particles.length;j++){
+
+            let dx=particles[i].x-particles[j].x;
+            let dy=particles[i].y-particles[j].y;
+            let dist=Math.sqrt(dx*dx+dy*dy);
+
+            if(dist<120){
+                ctx.beginPath();
+                ctx.moveTo(particles[i].x,particles[i].y);
+                ctx.lineTo(particles[j].x,particles[j].y);
+                ctx.strokeStyle=`rgba(255,255,255,${0.15-(dist/1200)})`;
+                ctx.stroke();
+            }
+        }
+    }
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+    </script>
+</body>
+</html>

